@@ -1,0 +1,1 @@
+early code sketches in processing for this concept: http://tinyurl.com/forrestdreamjournal
