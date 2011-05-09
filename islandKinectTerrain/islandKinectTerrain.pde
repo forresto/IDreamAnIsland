@@ -55,7 +55,7 @@ import org.openkinect.*;
 import org.openkinect.processing.*;
 
 Kinect kinect;
-KinectElevation kt;
+KinectElevation ke;
 
 import processing.video.*;
 MovieMaker mm;
@@ -72,12 +72,15 @@ Mesh3D mesh;
 Avatar car;
 
 Vec3D camOffset = new Vec3D(0, 2000, 300);
-Vec3D eyePos = new Vec3D(0, 100, 0);
+Vec3D eyePos = new Vec3D(0, 4000, 300);
 
 InterpolateStrategy sigmoid = new SigmoidInterpolation();
 InterpolateStrategy linear = new LinearInterpolation();
 InterpolateStrategy interpolate = linear;
 float interpolate_factor = 0.05f;
+
+Plane water = new Plane(new Vec3D(0, 0, 0), new Vec3D(0, 1, 0));
+
 
 void setup() {
   kinect = new Kinect(this);
@@ -87,7 +90,7 @@ void setup() {
 
   frameRate(24);
   // create terrain & generate elevation data
-  kt = new KinectElevation(DIMx, DIMz);
+  ke = new KinectElevation(DIMx, DIMz);
   terrain = new Terrain(DIMx, DIMz, 50);
   updateMesh();
   // create car
@@ -99,18 +102,14 @@ void setup() {
 }
 
 void updateMesh() {
-  float[] el = kt.getElevations();
-  
-  terrain.setElevation(el);
+  terrain.setElevation( ke.getElevations() );
   // create mesh
   mesh = terrain.toMesh();
 }
 
 
 void draw() {
-  
-  updateMesh();
-    
+      
   if (keyPressed) {
     if (key == '1') {
       camOffset.x = 0;
@@ -162,11 +161,11 @@ void draw() {
     }
 
     if (keyCode == UP) {
-      car.accelerate(.1);
+      car.accelerate(1);
       interpolate = linear;
       interpolate_factor = 0.05;
     } else if (keyCode == DOWN) {
-      car.accelerate(-.1);
+      car.accelerate(-1);
       interpolate = linear;
       interpolate_factor = 0.05;
     }
@@ -188,9 +187,29 @@ void draw() {
     if (key == 'q') {
       kill();
     }
+    if (key == ' ') {
+      println("c2: "+car.x+", "+car.y);
+      println("c3: "+car.pos.x+", "+car.pos.y+", "+car.pos.z);
+      println("h2: "+ke.getHighestPoint().x+", "+ke.getHighestPoint().y);
+      
+//      car.x = ke.getHighestPoint().x;
+//      car.y = ke.getHighestPoint().y;
+      
+    }
   }
+
+  updateMesh();
+  
+  
+  // Move car to highest
+  Vec2D high = ke.getHighestPoint().copy();
+  car.setTarget(high);
+//  car.x = high.x;
+//  car.y = high.y;
+
   // update steering & position
   car.update();
+  
   // adjust camera offset & rotate behind car based on current steering angle
   Vec3D camPos = car.pos.add(camOffset.getRotatedY(car.currTheta + HALF_PI));
 //  camPos.constrain(mesh.getBoundingBox());
@@ -201,7 +220,6 @@ void draw() {
   eyePos.interpolateToSelf(camPos, interpolate_factor, interpolate);
   background(0x000000);
   camera(eyePos.x, eyePos.y, eyePos.z, car.pos.x, car.pos.y, car.pos.z, 0, -1, 0);
-  //camera(0, cam_y, 0, car.pos.x, car.pos.y, car.pos.z, 0, -1, 0);
   // setup lights
   directionalLight(192, 192, 192, 0, -1000, -0.5f);
   directionalLight(64, 64, 64, 0.5f, -0.1f, 0.5f);
@@ -211,7 +229,7 @@ void draw() {
   gfx.mesh(mesh, false);
   car.draw();
   
-  gfx.plane(new Plane(), 10000000);
+  gfx.plane(water, 10000000);
 
   
   if (mm != null && recording) {

@@ -69,6 +69,7 @@ class KinectElevation {
     // Create the grayscale elevation map
     int[] depth = kinect.getRawDepth();
     int i = 0;
+    highest_point_el = 0;
     for (int z = 0; z < DIMz; z++) {
       for (int x = 0; x < DIMx; x++) {
         int e = 2047 - depth[(z*SCALE_Z*KINECT_W) + (x*SCALE_X)];
@@ -80,6 +81,7 @@ class KinectElevation {
         if (e > highest_point_el) {
           highest_point.x = x;
           highest_point.y = z;
+          highest_point_el = e;
         }
 
         i++;

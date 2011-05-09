@@ -8,6 +8,8 @@ class Avatar extends Vec2D {
   float targetTheta;
   float targetSpeed;
   float speed;
+  
+  Vec2D target = new Vec2D();
 
   public Avatar(float x, float y) {
     super(x, y);
@@ -21,7 +23,7 @@ class Avatar extends Vec2D {
 
   public void draw() {
     // create an axis aligned box and convert to mesh
-    TriangleMesh box = (TriangleMesh)new AABB(new Vec3D(), new Vec3D(2, 1, 4)).toMesh();
+    TriangleMesh box = (TriangleMesh)new AABB(new Vec3D(), new Vec3D(4, 1, 4)).toMesh();
     // align to terrain normal
     box.pointTowards(currNormal);
     // rotate into direction of movement
@@ -36,6 +38,10 @@ class Avatar extends Vec2D {
   public void steer(float t) {
     targetTheta += t;
   }
+  
+  public void setTarget(Vec2D _target) {
+    target = _target;
+  }
 
   public void update() {
     // slowly decay target speed
@@ -45,6 +51,10 @@ class Avatar extends Vec2D {
     speed += (targetSpeed - speed) * 0.1f;
     // update position
     addSelf(Vec2D.fromTheta(currTheta).scaleSelf(speed));
+    
+    // move towards target
+    interpolateToSelf(target, 0.25f);
+    
     // constrain position to terrain size in XZ plane
     AABB b = mesh.getBoundingBox();
     constrain(new Rect(b.getMin().to2DXZ(), b.getMax().to2DXZ()).scale(0.99f));
