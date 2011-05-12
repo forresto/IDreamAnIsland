@@ -4,7 +4,10 @@ class KinectElevation {
 
   float[] depthLookUp = new float[2048];
 
+  int NOISE_SEED = 23;
   float NOISE_SCALE = 0.08f;
+  int BLUR_RADIUS = 4;
+  float WATER_LEVEL = 6;
   
   int DIMx=80;
   int DIMz=80;
@@ -34,7 +37,6 @@ class KinectElevation {
     SCALE_X = KINECT_W/DIMx;
     SCALE_Z = KINECT_H/DIMz;
     
-    noiseSeed(23);
     el_gray = new int[DIMx*DIMz];
     elevation_last = new float[DIMx*DIMz];
     elevation = new float[DIMx*DIMz];
@@ -43,13 +45,9 @@ class KinectElevation {
       elevation_last[i] = 0.0;
       elevation[i] = 0.0;
     }
-    el_noise = new float[DIMx*DIMz];
-    for (int z = 0, i = 0; z < DIMz; z++) {
-      for (int x = 0; x < DIMx; x++) {
-        el_noise[i++] = noise(x * NOISE_SCALE, z * NOISE_SCALE) * 15;
-      }
-    }
 
+    el_noise = new float[DIMx*DIMz];
+    setNoiseSeed(NOISE_SEED);
     
     kinect.start();
     kinect.enableDepth(true);
@@ -63,6 +61,31 @@ class KinectElevation {
       depthLookUp[i] = rawDepthToMeters(i);
     }
   
+  }
+  
+  void setNoiseSeed (int _seed) {
+    NOISE_SEED = _seed;
+    noiseSeed(NOISE_SEED);
+    setNoiseScale(NOISE_SCALE);
+  }
+  
+  void setNoiseScale (float _scale) {
+    NOISE_SCALE = _scale;
+    for (int z = 0, i = 0; z < DIMz; z++) {
+      for (int x = 0; x < DIMx; x++) {
+        el_noise[i++] = noise(x * NOISE_SCALE, z * NOISE_SCALE) * 15;
+      }
+    }
+  }
+
+  void setBlur (int _blur) {
+    BLUR_RADIUS = _blur;
+  }
+  void setScaleY (int _scale) {
+    SCALE_Y = _scale;
+  }
+  void setWaterLevel (float _waterlevel) {
+    WATER_LEVEL = _waterlevel;
   }
 
   float[] getElevations() {
@@ -89,12 +112,12 @@ class KinectElevation {
     }
   
     // Blur the grayscale
-    int[] blurred = fastblur(el_gray, 4);
+    int[] blurred = fastblur(el_gray, BLUR_RADIUS);
     
     // Scale up to elevation
     for (i = 0; i<elevation.length; i++) {
       float el = blurred[i] * SCALE_Y;
-      el = lerp(elevation_last[i], el, .05) + el_noise[i] - 6;
+      el = lerp(elevation_last[i], el, .05) + el_noise[i] - WATER_LEVEL;
       elevation[i] = el;
     }
     elevation_last = elevation;

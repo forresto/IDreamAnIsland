@@ -53,7 +53,7 @@ class Avatar extends Vec2D {
     addSelf(Vec2D.fromTheta(currTheta).scaleSelf(speed));
     
     // move towards target
-    interpolateToSelf(target, 0.25f);
+//    target.interpolateToSelf(this, 0.1f);
     
     // constrain position to terrain size in XZ plane
     AABB b = mesh.getBoundingBox();

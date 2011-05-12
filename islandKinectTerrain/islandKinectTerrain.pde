@@ -82,6 +82,23 @@ float interpolate_factor = 0.05f;
 Plane water = new Plane(new Vec3D(0, 0, 0), new Vec3D(0, 1, 0));
 
 
+
+
+
+import controlP5.*;
+
+ControlP5 controlP5;
+ControlWindow controlWindow;
+
+int NOISE_SEED = 23;
+float NOISE_SCALE = 0.08f;
+int BLUR_RADIUS = 4;
+int SCALE_Y = 8;
+float WATER_LEVEL = 6;
+
+
+
+
 void setup() {
   kinect = new Kinect(this);
     
@@ -93,10 +110,34 @@ void setup() {
   ke = new KinectElevation(DIMx, DIMz);
   terrain = new Terrain(DIMx, DIMz, 50);
   updateMesh();
-  // create car
-  car = new Avatar(0, 0);
+  // create avatar
+  car = new Avatar(DIMx/2, DIMz/2);
   // attach drawing utils
   gfx = new ToxiclibsSupport(this);
+  
+  
+  controlP5 = new ControlP5(this);
+  controlP5.setAutoDraw(false);
+  controlWindow = controlP5.addControlWindow("controlP5window", 0, 0, 400, 300);
+  controlWindow.hideCoordinates();
+  controlWindow.setBackground(color(40));
+  Controller mySlider = controlP5.addSlider("setNoiseSeed",   0, 100, 20, 20, 300, 20);
+  mySlider.setWindow(controlWindow);
+  mySlider.setValue(NOISE_SEED);
+  Controller mySlider2 = controlP5.addSlider("setNoiseScale", 0, 2, 20, 50, 300, 20);
+  mySlider2.setWindow(controlWindow);
+  mySlider2.setValue(NOISE_SCALE);
+  Controller mySlider3 = controlP5.addSlider("setBlur",       0, 10, 20, 80, 300, 20);
+  mySlider3.setWindow(controlWindow);
+  mySlider3.setValue(BLUR_RADIUS);
+  Controller mySlider4 = controlP5.addSlider("setScaleY",     0, 20, 20, 110, 300, 20);
+  mySlider4.setWindow(controlWindow);
+  mySlider4.setValue(SCALE_Y);
+  Controller mySlider5 = controlP5.addSlider("setWaterLevel",     0, 20, 20, 140, 300, 20);
+  mySlider5.setWindow(controlWindow);
+  mySlider5.setValue(WATER_LEVEL);
+  
+  
   
 //  mm = new MovieMaker(this, width, height, "island.mov", 24, MovieMaker.ANIMATION, MovieMaker.HIGH);
 }
@@ -105,6 +146,30 @@ void updateMesh() {
   terrain.setElevation( ke.getElevations() );
   // create mesh
   mesh = terrain.toMesh();
+}
+
+void setNoiseSeed (int _seed) {
+  NOISE_SEED = _seed;
+  ke.setNoiseSeed(NOISE_SEED);
+}
+
+void setNoiseScale (float _scale) {
+  NOISE_SCALE = _scale;
+  ke.setNoiseScale(NOISE_SCALE);
+}
+
+void setBlur (int _blur) {
+  BLUR_RADIUS = _blur;
+  ke.setBlur(BLUR_RADIUS);
+}
+
+void setScaleY (int _scale) {
+  SCALE_Y = _scale;
+  ke.setScaleY(SCALE_Y);
+}
+void setWaterLevel (float _waterlevel) {
+  WATER_LEVEL = _waterlevel;
+  ke.setWaterLevel(WATER_LEVEL);
 }
 
 
@@ -142,12 +207,12 @@ void draw() {
 
     if (key == 'w') {
       camOffset.y += 50;
-      interpolate = sigmoid;
-      interpolate_factor = 0.3;
+      interpolate = linear;
+      interpolate_factor = 0.05;
     } else if (key == 's') {
       camOffset.y -= 50;
-      interpolate = sigmoid;
-      interpolate_factor = 0.3;
+      interpolate = linear;
+      interpolate_factor = 0.05;
     }
     
     if (key == 'a') {
@@ -192,9 +257,6 @@ void draw() {
       println("c3: "+car.pos.x+", "+car.pos.y+", "+car.pos.z);
       println("h2: "+ke.getHighestPoint().x+", "+ke.getHighestPoint().y);
       
-//      car.x = ke.getHighestPoint().x;
-//      car.y = ke.getHighestPoint().y;
-      
     }
   }
 
@@ -202,10 +264,7 @@ void draw() {
   
   
   // Move car to highest
-  Vec2D high = ke.getHighestPoint().copy();
-  car.setTarget(high);
-//  car.x = high.x;
-//  car.y = high.y;
+  car.setTarget(ke.getHighestPoint());
 
   // update steering & position
   car.update();
@@ -230,6 +289,8 @@ void draw() {
   car.draw();
   
   gfx.plane(water, 10000000);
+  
+  
 
   
   if (mm != null && recording) {
