@@ -7,7 +7,7 @@ class KinectElevation {
   int NOISE_SEED = 23;
   float NOISE_SCALE = 0.08f;
   int BLUR_RADIUS = 4;
-  float WATER_LEVEL = 6;
+  float WATER_LEVEL = 100;
   
   int DIMx=80;
   int DIMz=80;
@@ -26,10 +26,18 @@ class KinectElevation {
   int SCALE_X = KINECT_W/DIMx;
   int SCALE_Z = KINECT_H/DIMz;
   
-  int MAX_Y = 1700;
-  int MIN_Y = 1050;
+
+//  ControlP5 controlP5;
+  ControlWindow controlWindow;
+
+  int MAX_Y = 1300;
+  int MIN_Y = 1110;
   int RANGE_Y = MAX_Y - MIN_Y;
-  int SCALE_Y = 8;
+  float SCALE_Y = 8;
+  float NOISE_AMP = 360;
+  float CHANGE_SPEED = .05;
+
+
 
   KinectElevation(int dimx, int dimz) {
     DIMx = dimx;
@@ -49,48 +57,121 @@ class KinectElevation {
     el_noise = new float[DIMx*DIMz];
     setNoiseSeed(NOISE_SEED);
     
-    kinect.start();
-    kinect.enableDepth(true);
-    kinect.processDepthImage(false);
-    kinect.enableRGB(false);
-    kinect.enableIR(false);
-    kinect.tilt(deg);
-    
+//    kinect.start();
+//    kinect.enableDepth(true);
+//    kinect.processDepthImage(false);
+//    kinect.enableRGB(false);
+//    kinect.enableIR(false);
+//    kinect.tilt(deg);
+    NativeKinect.init();
+    NativeKinect.start();
+
     // Lookup table for all possible depth values (0 - 2047)
     for (int i = 0; i < depthLookUp.length; i++) {
       depthLookUp[i] = rawDepthToMeters(i);
     }
+
+
   
   }
   
+  void setupControls(ControlP5 controlP5) {
+    controlWindow = controlP5.addControlWindow("island", 0, 0, 1200, 75);
+    controlWindow.hideCoordinates();
+    controlWindow.setBackground(color(40));
+    Controller mySlider = controlP5.addSlider("NOISE_SEED",   0, 100, 10, 10, 300, 15);
+    mySlider.setWindow(controlWindow);
+    mySlider.setValue(NOISE_SEED);
+    Controller mySlider6 = controlP5.addSlider("NOISE_AMP",   0, 2000, 10, 30, 300, 15);
+    mySlider6.setWindow(controlWindow);
+    mySlider6.setValue(NOISE_AMP);
+    Controller mySlider2 = controlP5.addSlider("NOISE_SCALE", 0, 2,   10, 50, 300, 15);
+    mySlider2.setWindow(controlWindow);
+    mySlider2.setValue(NOISE_SCALE);
+
+    Controller mySlider3 = controlP5.addSlider("BLUR_RADIUS",   0, 10, 400, 10, 300, 15);
+    mySlider3.setWindow(controlWindow);
+    mySlider3.setValue(BLUR_RADIUS);
+    Controller mySlider4 = controlP5.addSlider("SCALE_Y",       0, 20, 400, 30, 300, 15);
+    mySlider4.setWindow(controlWindow);
+    mySlider4.setValue(SCALE_Y);
+    Controller mySlider5 = controlP5.addSlider("WATER_LEVEL",   0, 500, 400, 50, 300, 15);
+    mySlider5.setWindow(controlWindow);
+    mySlider5.setValue(WATER_LEVEL);
+
+    Controller miny = controlP5.addSlider("MIN_Y",   0, 2047, 800, 10, 300, 15);
+    miny.setWindow(controlWindow);
+    miny.setValue(MIN_Y);
+    Controller maxy = controlP5.addSlider("MAX_Y",   0, 2047, 800, 30, 300, 15);
+    maxy.setWindow(controlWindow);
+    maxy.setValue(MAX_Y);
+    Controller changespeed = controlP5.addSlider("CHANGE_SPEED", 0, 1, 800, 50, 300, 15);
+    changespeed.setWindow(controlWindow);
+    changespeed.setValue(CHANGE_SPEED);
+  }
+  
+  void setThis(String name, float value) {
+    if (name == "NOISE_SEED") {
+      setNoiseSeed((int)value);
+    }
+    if (name == "NOISE_SCALE") {
+      setNoiseScale(value);
+    }
+    if (name == "BLUR_RADIUS") {
+      BLUR_RADIUS = (int)value;
+    }
+    if (name == "SCALE_Y") {
+      SCALE_Y = value;
+    }
+    if (name == "WATER_LEVEL") {
+      WATER_LEVEL = value;
+    }
+    if (name == "NOISE_AMP") {
+      NOISE_AMP = value;
+      setNoiseScale(NOISE_SCALE);
+    }
+    if (name == "MIN_Y") {
+      MIN_Y = (int)value;
+      MIN_Y = min(MAX_Y-5, MIN_Y);
+      RANGE_Y = MAX_Y - MIN_Y;
+    }
+    if (name == "MAX_Y") {
+      MAX_Y = (int)value;
+      MAX_Y = max(MIN_Y+5, MAX_Y);
+      RANGE_Y = MAX_Y - MIN_Y;
+    }
+    if (name == "CHANGE_SPEED") {
+      CHANGE_SPEED = value;
+    }
+  }
+    
   void setNoiseSeed (int _seed) {
     NOISE_SEED = _seed;
     noiseSeed(NOISE_SEED);
     setNoiseScale(NOISE_SCALE);
   }
-  
   void setNoiseScale (float _scale) {
     NOISE_SCALE = _scale;
     for (int z = 0, i = 0; z < DIMz; z++) {
       for (int x = 0; x < DIMx; x++) {
-        el_noise[i++] = noise(x * NOISE_SCALE, z * NOISE_SCALE) * 15;
+        el_noise[i++] = noise(x * NOISE_SCALE, z * NOISE_SCALE) * NOISE_AMP;
       }
     }
   }
 
-  void setBlur (int _blur) {
-    BLUR_RADIUS = _blur;
-  }
-  void setScaleY (int _scale) {
-    SCALE_Y = _scale;
-  }
-  void setWaterLevel (float _waterlevel) {
-    WATER_LEVEL = _waterlevel;
-  }
+//  void setBlur (int _blur) {
+//    BLUR_RADIUS = _blur;
+//  }
+//  void setScaleY (int _scale) {
+//    SCALE_Y = _scale;
+//  }
+//  void setWaterLevel (float _waterlevel) {
+//    WATER_LEVEL = _waterlevel;
+//  }
 
   float[] getElevations() {
     // Create the grayscale elevation map
-    int[] depth = kinect.getRawDepth();
+    short[] depth = NativeKinect.getDepthMapRaw();
     int i = 0;
     highest_point_el = 0;
     for (int z = 0; z < DIMz; z++) {
@@ -116,8 +197,8 @@ class KinectElevation {
     
     // Scale up to elevation
     for (i = 0; i<elevation.length; i++) {
-      float el = blurred[i] * SCALE_Y;
-      el = lerp(elevation_last[i], el, .05) + el_noise[i] - WATER_LEVEL;
+      float el = blurred[i] * SCALE_Y + el_noise[i] - WATER_LEVEL;
+      el = lerp(elevation_last[i], el, CHANGE_SPEED);
       elevation[i] = el;
     }
     elevation_last = elevation;

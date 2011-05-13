@@ -51,10 +51,11 @@ import toxi.processing.*;
 
 import processing.opengl.*;
 
-import org.openkinect.*;
-import org.openkinect.processing.*;
+//import org.openkinect.*;
+//import org.openkinect.processing.*;
+import king.kinect.*;
 
-Kinect kinect;
+//Kinect kinect;
 KinectElevation ke;
 
 import processing.video.*;
@@ -88,24 +89,25 @@ Plane water = new Plane(new Vec3D(0, 0, 0), new Vec3D(0, 1, 0));
 import controlP5.*;
 
 ControlP5 controlP5;
-ControlWindow controlWindow;
+//ControlWindow controlWindow;
 
-int NOISE_SEED = 23;
-float NOISE_SCALE = 0.08f;
-int BLUR_RADIUS = 4;
-int SCALE_Y = 8;
-float WATER_LEVEL = 6;
+//int NOISE_SEED = 23;
+//float NOISE_SCALE = 0.08f;
+//int BLUR_RADIUS = 4;
+//int SCALE_Y = 8;
+//float WATER_LEVEL = 6;
 
 
 
 
 void setup() {
-  kinect = new Kinect(this);
+//  kinect = new Kinect(this);
     
   size(1280, 720, OPENGL);
   hint(ENABLE_OPENGL_4X_SMOOTH);  
 
   frameRate(24);
+
   // create terrain & generate elevation data
   ke = new KinectElevation(DIMx, DIMz);
   terrain = new Terrain(DIMx, DIMz, 50);
@@ -118,24 +120,13 @@ void setup() {
   
   controlP5 = new ControlP5(this);
   controlP5.setAutoDraw(false);
-  controlWindow = controlP5.addControlWindow("controlP5window", 0, 0, 400, 300);
-  controlWindow.hideCoordinates();
-  controlWindow.setBackground(color(40));
-  Controller mySlider = controlP5.addSlider("setNoiseSeed",   0, 100, 20, 20, 300, 20);
-  mySlider.setWindow(controlWindow);
-  mySlider.setValue(NOISE_SEED);
-  Controller mySlider2 = controlP5.addSlider("setNoiseScale", 0, 2, 20, 50, 300, 20);
-  mySlider2.setWindow(controlWindow);
-  mySlider2.setValue(NOISE_SCALE);
-  Controller mySlider3 = controlP5.addSlider("setBlur",       0, 10, 20, 80, 300, 20);
-  mySlider3.setWindow(controlWindow);
-  mySlider3.setValue(BLUR_RADIUS);
-  Controller mySlider4 = controlP5.addSlider("setScaleY",     0, 20, 20, 110, 300, 20);
-  mySlider4.setWindow(controlWindow);
-  mySlider4.setValue(SCALE_Y);
-  Controller mySlider5 = controlP5.addSlider("setWaterLevel",     0, 20, 20, 140, 300, 20);
-  mySlider5.setWindow(controlWindow);
-  mySlider5.setValue(WATER_LEVEL);
+//  controlWindow = controlP5.addControlWindow("controlP5window", 0, 0, 400, 300);
+//  controlWindow.hideCoordinates();
+//  controlWindow.setBackground(color(40));
+
+  ke.setupControls(controlP5);
+  
+  
   
   
   
@@ -148,29 +139,29 @@ void updateMesh() {
   mesh = terrain.toMesh();
 }
 
-void setNoiseSeed (int _seed) {
-  NOISE_SEED = _seed;
-  ke.setNoiseSeed(NOISE_SEED);
-}
-
-void setNoiseScale (float _scale) {
-  NOISE_SCALE = _scale;
-  ke.setNoiseScale(NOISE_SCALE);
-}
-
-void setBlur (int _blur) {
-  BLUR_RADIUS = _blur;
-  ke.setBlur(BLUR_RADIUS);
-}
-
-void setScaleY (int _scale) {
-  SCALE_Y = _scale;
-  ke.setScaleY(SCALE_Y);
-}
-void setWaterLevel (float _waterlevel) {
-  WATER_LEVEL = _waterlevel;
-  ke.setWaterLevel(WATER_LEVEL);
-}
+//void setNoiseSeed (int _seed) {
+//  NOISE_SEED = _seed;
+//  ke.setNoiseSeed(NOISE_SEED);
+//}
+//
+//void setNoiseScale (float _scale) {
+//  NOISE_SCALE = _scale;
+//  ke.setNoiseScale(NOISE_SCALE);
+//}
+//
+//void setBlur (int _blur) {
+//  BLUR_RADIUS = _blur;
+//  ke.setBlur(BLUR_RADIUS);
+//}
+//
+//void setScaleY (int _scale) {
+//  SCALE_Y = _scale;
+//  ke.setScaleY(SCALE_Y);
+//}
+//void setWaterLevel (float _waterlevel) {
+//  WATER_LEVEL = _waterlevel;
+//  ke.setWaterLevel(WATER_LEVEL);
+//}
 
 
 void draw() {
@@ -302,7 +293,7 @@ void kill() {
   if (mm != null) {
     mm.finish();
   }
-  kinect.quit();
+//  kinect.quit();
   exit();
 }
 
@@ -318,4 +309,8 @@ void stopRecording() {
   recording = false;
 }
 
+
+public void controlEvent(ControlEvent e) {
+  ke.setThis(e.name(), e.value());
+}
 
