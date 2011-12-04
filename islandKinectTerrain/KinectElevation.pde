@@ -5,12 +5,17 @@ class KinectElevation {
   float[] depthLookUp = new float[2048];
 
   int NOISE_SEED = 23;
+  float NOISE_AMP = 360;
   float NOISE_SCALE = 0.08f;
-  int BLUR_RADIUS = 4;
-  float WATER_LEVEL = 100;
   
-  int DIMx=80;
-  int DIMz=80;
+  int BLUR_RADIUS = 2;
+  float WATER_LEVEL = 40;
+  
+  int KINECT_W = 640;
+  int KINECT_H = 480;
+  
+  int DIMx = 120;
+  int DIMz = 90;
 
   int[] el_gray;
   float[] elevation_last;
@@ -18,23 +23,25 @@ class KinectElevation {
   float[] el_noise;
   
   Vec2D highest_point = new Vec2D();
-  int highest_point_el = 0;
-  
-  int KINECT_W = 640;
-  int KINECT_H = 480;
-  
-  int SCALE_X = KINECT_W/DIMx;
-  int SCALE_Z = KINECT_H/DIMz;
-  
+  int highest_point_el = 0;  
 
 //  ControlP5 controlP5;
   ControlWindow controlWindow;
 
-  int MAX_Y = 1300;
-  int MIN_Y = 1110;
+  int MAX_X = 590;
+  int MIN_X = 174;
+  int RANGE_X = MAX_X - MIN_X;
+  int MAX_Z = 420;
+  int MIN_Z = 110;
+  int RANGE_Z = MAX_Z - MIN_Z;
+  
+  int SCALE_X = RANGE_X/DIMx;
+  int SCALE_Z = RANGE_Z/DIMz;
+
+  int MAX_Y = 1139;
+  int MIN_Y = 1091;
   int RANGE_Y = MAX_Y - MIN_Y;
-  float SCALE_Y = 8;
-  float NOISE_AMP = 360;
+  float SCALE_Y = 6.5;
   float CHANGE_SPEED = .05;
 
 
@@ -42,8 +49,8 @@ class KinectElevation {
   KinectElevation(int dimx, int dimz) {
     DIMx = dimx;
     DIMz = dimz;
-    SCALE_X = KINECT_W/DIMx;
-    SCALE_Z = KINECT_H/DIMz;
+    SCALE_X = RANGE_X/DIMx;
+    SCALE_Z = RANGE_Z/DIMz;
     
     el_gray = new int[DIMx*DIMz];
     elevation_last = new float[DIMx*DIMz];
@@ -82,7 +89,7 @@ class KinectElevation {
     Controller mySlider = controlP5.addSlider("NOISE_SEED",   0, 100, 10, 10, 300, 15);
     mySlider.setWindow(controlWindow);
     mySlider.setValue(NOISE_SEED);
-    Controller mySlider6 = controlP5.addSlider("NOISE_AMP",   0, 2000, 10, 30, 300, 15);
+    Controller mySlider6 = controlP5.addSlider("NOISE_AMP",   0, 1000, 10, 30, 300, 15);
     mySlider6.setWindow(controlWindow);
     mySlider6.setValue(NOISE_AMP);
     Controller mySlider2 = controlP5.addSlider("NOISE_SCALE", 0, 2,   10, 50, 300, 15);
@@ -154,7 +161,7 @@ class KinectElevation {
     NOISE_SCALE = _scale;
     for (int z = 0, i = 0; z < DIMz; z++) {
       for (int x = 0; x < DIMx; x++) {
-        el_noise[i++] = noise(x * NOISE_SCALE, z * NOISE_SCALE) * NOISE_AMP;
+        el_noise[i++] = noise(x * NOISE_SCALE, z * NOISE_SCALE) * NOISE_AMP - NOISE_AMP/2;
       }
     }
   }
@@ -176,7 +183,7 @@ class KinectElevation {
     highest_point_el = 0;
     for (int z = 0; z < DIMz; z++) {
       for (int x = 0; x < DIMx; x++) {
-        int e = 2047 - depth[(z*SCALE_Z*KINECT_W) + (x*SCALE_X)];
+        int e = 2047 - depth[(z*SCALE_Z+MIN_Z)*KINECT_W + (x*SCALE_X+MIN_X)];
         e = max(e, MIN_Y);
         e = min(e, MAX_Y);
         e = floor(float(e - MIN_Y) / RANGE_Y * 256);
@@ -197,7 +204,8 @@ class KinectElevation {
     
     // Scale up to elevation
     for (i = 0; i<elevation.length; i++) {
-      float el = blurred[i] * SCALE_Y + el_noise[i] - WATER_LEVEL;
+      float el = blurred[i] * SCALE_Y - WATER_LEVEL;
+      if (el > 10) el += el_noise[i];
       el = lerp(elevation_last[i], el, CHANGE_SPEED);
       elevation[i] = el;
     }
@@ -239,10 +247,7 @@ class KinectElevation {
     int hm=h-1;
     int wh=w*h;
     int div=radius+radius+1;
-//    int r[]=new int[wh];
-//    int g[]=new int[wh];
     int b[]=new int[wh];
-//    int rsum,gsum,
     int bsum,x,y,i,p,p1,p2,yp,yi,yw;
     int vmin[] = new int[max(w,h)];
     int vmax[] = new int[max(w,h)];
@@ -255,18 +260,12 @@ class KinectElevation {
     yw=yi=0;
    
     for (y=0;y<h;y++){
-//      rsum=gsum=
       bsum=0;
       for(i=-radius;i<=radius;i++){
         p=pix[yi+min(wm,max(i,0))];
-//        rsum+=(p & 0xff0000)>>16;
-//        gsum+=(p & 0x00ff00)>>8;
         bsum+= p & 0x0000ff;
       }
       for (x=0;x<w;x++){
-      
-//        r[yi]=dv[rsum];
-//        g[yi]=dv[gsum];
         b[yi]=dv[bsum];
   
         if(y==0){
@@ -275,9 +274,6 @@ class KinectElevation {
          } 
          p1=pix[yw+vmin[x]];
          p2=pix[yw+vmax[x]];
-  
-//        rsum+=((p1 & 0xff0000)-(p2 & 0xff0000))>>16;
-//        gsum+=((p1 & 0x00ff00)-(p2 & 0x00ff00))>>8;
         bsum+= (p1 & 0x0000ff)-(p2 & 0x0000ff);
         yi++;
       }
@@ -285,19 +281,15 @@ class KinectElevation {
     }
     
     for (x=0;x<w;x++){
-//      rsum=gsum=
       bsum=0;
       yp=-radius*w;
       for(i=-radius;i<=radius;i++){
         yi=max(0,yp)+x;
-//        rsum+=r[yi];
-//        gsum+=g[yi];
         bsum+=b[yi];
         yp+=w;
       }
       yi=x;
       for (y=0;y<h;y++){
-//        pix[yi]=0xff000000 | (dv[rsum]<<16) | (dv[gsum]<<8) | dv[bsum];
         pix[yi]=dv[bsum];
         if(x==0){
           vmin[y]=min(y+radius+1,hm)*w;
@@ -306,8 +298,6 @@ class KinectElevation {
         p1=x+vmin[y];
         p2=x+vmax[y];
   
-//        rsum+=r[p1]-r[p2];
-//        gsum+=g[p1]-g[p2];
         bsum+=b[p1]-b[p2];
   
         yi+=w;

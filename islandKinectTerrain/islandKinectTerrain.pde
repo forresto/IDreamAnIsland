@@ -64,8 +64,8 @@ boolean recording = false;
 
 
 //float NOISE_SCALE = 0.08f;
-int DIMx=120;
-int DIMz=90;
+int DIMx=100;
+int DIMz=75;
 
 Terrain terrain;
 ToxiclibsSupport gfx;
@@ -244,10 +244,12 @@ void draw() {
       kill();
     }
     if (key == ' ') {
-      println("c2: "+car.x+", "+car.y);
-      println("c3: "+car.pos.x+", "+car.pos.y+", "+car.pos.z);
-      println("h2: "+ke.getHighestPoint().x+", "+ke.getHighestPoint().y);
-      
+//      println("c2: "+car.x+", "+car.y);
+//      println("c3: "+car.pos.x+", "+car.pos.y+", "+car.pos.z);
+//      println("h2: "+ke.getHighestPoint().x+", "+ke.getHighestPoint().y);
+
+      save("island-"+year()+"-"+month()+"-"+day()+"-"+hour()+"-"+minute()+"-"+second()+".png");
+
     }
   }
 
@@ -255,7 +257,7 @@ void draw() {
   
   
   // Move car to highest
-  car.setTarget(ke.getHighestPoint());
+//  car.setTarget(ke.getHighestPoint());
 
   // update steering & position
   car.update();
